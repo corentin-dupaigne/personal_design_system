@@ -78,6 +78,12 @@
     --surface-3: var(--bg-surface);
     --surface-4: var(--bg-overlay);
 
+    /* — Semantic surface aliases —
+       "Raised" = visually elevated above --bg-subtle.
+       In light it's lighter (--bg); in dark it's also lighter (--bg-surface).
+       Use for active pills, segmented selection, etc. */
+    --surface-raised: var(--bg);
+
     /* — Shadow (used sparingly, only for floating overlays) — */
     --shadow-overlay: 0 1px 2px rgba(44,31,14,0.06), 0 6px 16px rgba(44,31,14,0.10);
     --shadow-modal:   0 2px 4px rgba(44,31,14,0.08), 0 12px 32px rgba(44,31,14,0.14);
@@ -151,6 +157,9 @@
     --info:        #6a9ec4;
     --info-bg:     rgba(106,158,196,0.14);
 
+    /* In dark, elevation goes the other way — raised surfaces are lighter. */
+    --surface-raised: var(--bg-surface);
+
     --shadow-overlay: 0 1px 2px rgba(0,0,0,0.40), 0 6px 16px rgba(0,0,0,0.50);
     --shadow-modal:   0 2px 4px rgba(0,0,0,0.40), 0 12px 32px rgba(0,0,0,0.55);
     --shadow-toast:   0 1px 2px rgba(0,0,0,0.40), 0 4px 12px rgba(0,0,0,0.50);
@@ -180,6 +189,7 @@
       --danger-bg:   rgba(196,106,106,0.14);
       --info:        #6a9ec4;
       --info-bg:     rgba(106,158,196,0.14);
+      --surface-raised: var(--bg-surface);
     }
   }
 
@@ -1281,17 +1291,19 @@
     font-size: var(--text-xs);
     color: var(--muted);
     background: transparent;
-    border: none;
+    border: 1px solid transparent;
     padding: var(--space-2) var(--space-5);
     border-radius: var(--radius-sm);
     cursor: pointer;
     letter-spacing: 0.02em;
-    transition: all var(--duration-base) var(--ease);
+    transition: background var(--duration-base) var(--ease),
+                color var(--duration-base) var(--ease),
+                border-color var(--duration-base) var(--ease);
   }
   .segmented button[aria-pressed="true"] {
-    background: var(--bg);
+    background: var(--surface-raised);
     color: var(--fg);
-    border: 1px solid var(--border);
+    border-color: var(--border);
   }
 
   /* ============================================================
@@ -1707,6 +1719,7 @@
     transition: transform var(--duration-base) var(--ease);
   }
   .acc-row[aria-expanded="true"] .acc-marker { transform: rotate(45deg); }
+  .acc-row[aria-expanded="false"] .acc-body { display: none; }
   .acc-body {
     padding: 0 0 var(--space-5);
     font-size: var(--text-xs);
@@ -1960,6 +1973,77 @@
 
   /* Selection */
   ::selection { background: rgba(184,136,42,0.2); color: var(--fg); }
+
+  /* Print — emit a clean PDF with no sidebar, force light theme */
+  @page { size: A4 portrait; margin: 14mm 12mm; }
+
+  @media print {
+    :root, :root[data-theme="dark"] {
+      --bg: #ffffff;
+      --bg-subtle: #faf6ec;
+      --bg-surface: #f3eeda;
+      --bg-overlay: #ebe2c9;
+      --fg: #1a120a;
+      --muted: #6f5a3f;
+      --faint: #b8997a;
+      --accent: #9c7320;
+      --border: #cdb98f;
+      --border-strong: #b8997a;
+      --surface-raised: #ffffff;
+    }
+    html { font-size: 11px; }
+    html, body {
+      background: #ffffff;
+      width: 100%;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+    .page-wrap { display: block; }
+    .sidebar { display: none !important; }
+    .main {
+      padding: 0;
+      max-width: 100%;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    .theme-toggle { display: none !important; }
+
+    /* Collapse multi-column grids that won't fit a single A4 column legibly */
+    .principles-grid,
+    .do-dont-grid,
+    .contrast-grid,
+    .logo-grid,
+    .component-grid,
+    .stat-grid,
+    .semantic-row,
+    .elevation-row { grid-template-columns: 1fr 1fr; }
+    .radius-row { grid-template-columns: repeat(5, 1fr); }
+    .palette-grid { grid-template-columns: repeat(4, 1fr); }
+
+    /* Page-break hygiene */
+    .section { page-break-inside: auto; }
+    .section-header, .subsection-title,
+    h1, h2, h3 { page-break-after: avoid; }
+    .principle, .stat-card, .alert, .toast, .empty-state,
+    .modal-shell, .dropdown-menu, .component-demo, .palette-chip,
+    .changelog-entry, .icon-cell, .radius-cell,
+    .semantic-chip, .elev-card, .contrast-cell, .logo-cell, .do-dont,
+    .type-specimen, .acc-row, table, pre {
+      page-break-inside: avoid;
+      break-inside: avoid;
+    }
+
+    a { color: var(--fg); text-decoration: none; }
+    pre { white-space: pre-wrap; word-wrap: break-word; }
+    .skeleton { animation: none; background: var(--bg-subtle); }
+
+    /* Avoid orphaned empty-state cards and overlays */
+    .modal-overlay-demo { background: transparent; padding: 0; }
+
+    /* Guarantee no horizontal overflow */
+    *, *::before, *::after { max-width: 100%; }
+    img, table, pre { overflow: visible; }
+  }
 
   /* Responsive */
   @media (max-width: 900px) {
@@ -3482,12 +3566,14 @@ document.documentElement.dataset.theme =
                 <span>What detection should have fired earlier?</span>
                 <span class="acc-marker">+</span>
               </button>
+              <div class="acc-body">The p99 latency alert was scoped to 5-minute windows. A 1-minute window would have triggered 3m 40s sooner. Action item filed to add a short-window detector.</div>
             </div>
             <div class="acc-row" aria-expanded="false">
               <button class="acc-header" aria-expanded="false">
                 <span>Were customer-facing errors observed?</span>
                 <span class="acc-marker">+</span>
               </button>
+              <div class="acc-body">Yes — 0.4% of checkout requests returned a 503 between 14:21 and 14:28 UTC. Affected sessions received a retry banner; no orders were lost.</div>
             </div>
           </div>
         </div>
@@ -4360,6 +4446,101 @@ document.documentElement.dataset.theme =
 
   </main>
 </div>
+
+<script>
+(() => {
+  // Radio groups — click a row to select; siblings clear
+  document.querySelectorAll('[role="radiogroup"]').forEach(group => {
+    group.addEventListener('click', e => {
+      const row = e.target.closest('.radio-row');
+      if (!row || !group.contains(row)) return;
+      group.querySelectorAll('.radio-circle').forEach(c => c.classList.remove('checked'));
+      row.querySelector('.radio-circle')?.classList.add('checked');
+    });
+  });
+
+  // Switches — toggle on/off
+  document.querySelectorAll('.switch').forEach(sw => {
+    sw.addEventListener('click', () => {
+      sw.classList.toggle('on');
+      sw.setAttribute('aria-checked', sw.classList.contains('on') ? 'true' : 'false');
+    });
+  });
+
+  // Segmented controls — single-select within group
+  document.querySelectorAll('.segmented').forEach(group => {
+    group.addEventListener('click', e => {
+      const btn = e.target.closest('button');
+      if (!btn || !group.contains(btn)) return;
+      group.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', 'false'));
+      btn.setAttribute('aria-pressed', 'true');
+    });
+  });
+
+  // Tabs — single-select within tablist
+  document.querySelectorAll('.tabs').forEach(group => {
+    group.addEventListener('click', e => {
+      const tab = e.target.closest('.tab');
+      if (!tab || !group.contains(tab)) return;
+      group.querySelectorAll('.tab').forEach(t => t.setAttribute('aria-selected', 'false'));
+      tab.setAttribute('aria-selected', 'true');
+    });
+  });
+
+  // Pagination — click numbered button to mark as current
+  document.querySelectorAll('.pagination').forEach(group => {
+    group.addEventListener('click', e => {
+      const btn = e.target.closest('.pagination-btn');
+      if (!btn || !group.contains(btn)) return;
+      if (btn.hasAttribute('aria-label')) return; // skip prev/next
+      group.querySelectorAll('.pagination-btn').forEach(b => b.removeAttribute('aria-current'));
+      btn.setAttribute('aria-current', 'page');
+    });
+  });
+
+  // Accordion — toggle row expansion
+  document.querySelectorAll('.accordion').forEach(acc => {
+    acc.addEventListener('click', e => {
+      const header = e.target.closest('.acc-header');
+      if (!header || !acc.contains(header)) return;
+      const row = header.closest('.acc-row');
+      const open = row.getAttribute('aria-expanded') === 'true';
+      row.setAttribute('aria-expanded', open ? 'false' : 'true');
+      header.setAttribute('aria-expanded', open ? 'false' : 'true');
+    });
+  });
+
+  // Checkboxes — toggle .checked + insert/remove the check mark
+  document.querySelectorAll('.check-row').forEach(row => {
+    row.style.cursor = 'pointer';
+    row.addEventListener('click', () => {
+      const box = row.querySelector('.check-box');
+      if (!box) return;
+      if (box.classList.contains('checked')) {
+        box.classList.remove('checked');
+        box.querySelector('.check-mark')?.remove();
+      } else {
+        box.classList.add('checked');
+        if (!box.querySelector('.check-mark')) {
+          const mark = document.createElement('div');
+          mark.className = 'check-mark';
+          box.appendChild(mark);
+        }
+      }
+    });
+  });
+
+  // Slider — live value readout (find paired value span by data-for or sibling)
+  document.querySelectorAll('.slider').forEach(input => {
+    const wrap = input.closest('.slider-wrap');
+    const readout = wrap?.querySelector('span[style*="color:var(--fg)"]');
+    if (!readout) return;
+    input.addEventListener('input', () => {
+      readout.textContent = `${input.value} ms`;
+    });
+  });
+})();
+</script>
 
 </body>
 </html>

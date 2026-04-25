@@ -9,6 +9,7 @@ The design system defines tokens (color, type, spacing, radius, motion) in a sin
 ```
 system_design/
 ├── system-design.html     # design tokens + component reference (open in a browser)
+├── system-design.pdf      # printable snapshot of the reference (8 pages, A4)
 └── slides/
     ├── compile.js         # assembles all 40 slide modules into master-deck.pptx
     ├── shared.js          # shared tokens, layout constants, and helpers
@@ -48,4 +49,19 @@ Output is written to `slides/output/master-deck.pptx`. Each slide module is requ
 
 ## Viewing the design reference
 
-Open `system-design.html` directly in a browser — no build step.
+Open `system-design.html` directly in a browser — no build step. The page ships with a light/dark toggle, interactive components (radios, switches, tabs, segmented controls, accordion, pagination), and a print stylesheet.
+
+Or open [`system-design.pdf`](./system-design.pdf) for a printable snapshot of the same reference (A4, 8 pages, light theme).
+
+## Regenerating the PDF
+
+The PDF is rendered from `system-design.html` via headless Chrome. Re-run after any change to the HTML:
+
+```sh
+google-chrome --headless=new --disable-gpu --no-sandbox \
+  --no-pdf-header-footer --virtual-time-budget=15000 \
+  --print-to-pdf=system-design.pdf \
+  "file://$PWD/system-design.html"
+```
+
+The page size and margins are set in CSS (`@page { size: A4 portrait; margin: 14mm 12mm; }`). Print rules in `system-design.html` hide the sidebar, force the light palette, and collapse multi-column grids that wouldn't fit a single A4 column.
